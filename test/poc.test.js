@@ -72,7 +72,7 @@ describe('with global timeout', () => {
 })
 
 
-describe('with global timeout overrided by query timeout', () => {
+describe('with global timeout overridden by query timeout', () => {
   test('timeout throws an exception', async () => {
     await expect(knexGlobalTimeout.raw('select pg_sleep(10)').timeout(TWO_MILLISECONDS)).rejects.toThrow('Defined query timeout of 2ms exceeded when running query.');
   }, JEST_TIMEOUT)
