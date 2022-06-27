@@ -29,7 +29,7 @@ afterAll(async () => {
   await knex.destroy();
 })
 
-describe('with query timout only', () => {
+describe('with query timeout only', () => {
   test('timeout throws an exception', async () => {
     await expect(knex.raw('select pg_sleep(10)').timeout(ONE_SECOND)).rejects.toThrow();
   }, JEST_TIMEOUT)
@@ -51,7 +51,7 @@ describe('with query timout only', () => {
 })
 
 
-describe('with global timout', () => {
+describe('with global timeout', () => {
   test('timeout throws an exception', async () => {
     await expect(knexGlobalTimeout.raw('select pg_sleep(10)')).rejects.toThrow();
   }, JEST_TIMEOUT)
@@ -72,7 +72,7 @@ describe('with global timout', () => {
 })
 
 
-describe('with global timout overrided by query timeout', () => {
+describe('with global timeout overrided by query timeout', () => {
   test('timeout throws an exception', async () => {
     await expect(knexGlobalTimeout.raw('select pg_sleep(10)').timeout(TWO_MILLISECONDS)).rejects.toThrow('Defined query timeout of 2ms exceeded when running query.');
   }, JEST_TIMEOUT)
