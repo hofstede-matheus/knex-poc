@@ -1,10 +1,17 @@
 const knexConfig = require('../knexfile');
+const knexConfigGlobalTimeout = require('../knexfile_timeout');
+
 const knex = require('knex')(knexConfig['test'])
+const knexGlobalTimeout = require('knex')(knexConfigGlobalTimeout['test'])
 
 const JEST_TIMEOUT = 60000;
 
 const ONE_SECOND = 1000;
 const TWO_MILLISECONDS = 2;
+
+knex.on('start', async (query) => {
+  // console.log(query);
+})
 
 beforeAll(async () => {
   await knex.raw(`
@@ -22,32 +29,73 @@ afterAll(async () => {
   await knex.destroy();
 })
 
-test('timeout throws an exception', async () => {
-  await expect(knex.raw('select pg_sleep(10)').timeout(ONE_SECOND)).rejects.toThrow('Defined query timeout of 1000ms exceeded when running query.');
-}, JEST_TIMEOUT)
+describe('with query timout only', () => {
+  test('timeout throws an exception', async () => {
+    await expect(knex.raw('select pg_sleep(10)').timeout(ONE_SECOND)).rejects.toThrow();
+  }, JEST_TIMEOUT)
 
-test('catching error', async () => {
-  try {
-    await knex.raw('select pg_sleep(10)').timeout(ONE_SECOND)
-  } catch (error) {
-    console.log(error);
-  }
-}, JEST_TIMEOUT)
+  test('with real data', async () => {
+    const entriesToAdd = new Array(10000);
 
-test('with real data', async () => {
-  const entriesToAdd = new Array(10000);
+    for (const _ of entriesToAdd) {
+      await knex('users').insert({});
+    }
 
-  for (const _ of entriesToAdd) {
-    await knex('users').insert({});
-  }
+    await expect(
+      knex.
+        raw('select * from users inner join users u on u.id = users.id').
+        timeout(TWO_MILLISECONDS)
+    ).rejects.toThrow();
 
-  await expect(
-    knex.
-      raw('select * from users inner join users u on u.id = users.id').
-      timeout(TWO_MILLISECONDS)
-  ).rejects.toThrow('Defined query timeout of 2ms exceeded when running query.');
+  }, JEST_TIMEOUT)
+})
 
-}, JEST_TIMEOUT)
+
+describe('with global timout', () => {
+  test('timeout throws an exception', async () => {
+    await expect(knexGlobalTimeout.raw('select pg_sleep(10)')).rejects.toThrow();
+  }, JEST_TIMEOUT)
+
+  test('with real data', async () => {
+    const entriesToAdd = new Array(10000);
+
+    entriesToAdd.forEach(async () => {
+      await knexGlobalTimeout.from('users').insert({});
+    })
+
+    await expect(
+      knexGlobalTimeout.
+        raw('select * from users inner join users u on u.id = users.id')
+    ).rejects.toThrow();
+
+  }, JEST_TIMEOUT)
+})
+
+
+describe('with global timout overrided by query timeout', () => {
+  test('timeout throws an exception', async () => {
+    await expect(knexGlobalTimeout.raw('select pg_sleep(10)').timeout(TWO_MILLISECONDS)).rejects.toThrow('Defined query timeout of 2ms exceeded when running query.');
+  }, JEST_TIMEOUT)
+
+  test('with real data', async () => {
+    const entriesToAdd = new Array(10000);
+
+    // for some reasion for of is not working
+    entriesToAdd.forEach(async () => {
+      await knexGlobalTimeout.from('users').insert({});
+    })
+
+    await expect(
+      knexGlobalTimeout.
+        raw('select * from users inner join users u on u.id = users.id').
+        timeout(TWO_MILLISECONDS)
+    ).rejects.toThrow('Defined query timeout of 2ms exceeded when running query.');
+
+  }, JEST_TIMEOUT)
+})
+
+
+
 
 
 
