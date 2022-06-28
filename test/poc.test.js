@@ -70,32 +70,3 @@ describe('with global timeout', () => {
 
   }, JEST_TIMEOUT)
 })
-
-
-describe('with global timeout overridden by query timeout', () => {
-  test('timeout throws an exception', async () => {
-    await expect(knexGlobalTimeout.raw('select pg_sleep(10)').timeout(TWO_MILLISECONDS)).rejects.toThrow('Defined query timeout of 2ms exceeded when running query.');
-  }, JEST_TIMEOUT)
-
-  test('with real data', async () => {
-    const entriesToAdd = new Array(10000);
-
-    // for some reasion for of is not working
-    entriesToAdd.forEach(async () => {
-      await knexGlobalTimeout.from('users').insert({});
-    })
-
-    await expect(
-      knexGlobalTimeout.
-        raw('select * from users inner join users u on u.id = users.id').
-        timeout(TWO_MILLISECONDS)
-    ).rejects.toThrow('Defined query timeout of 2ms exceeded when running query.');
-
-  }, JEST_TIMEOUT)
-})
-
-
-
-
-
-
